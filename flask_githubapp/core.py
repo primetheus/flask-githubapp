@@ -1,10 +1,12 @@
-"""Flask extension for rapid GitHub app development"""
+"""
+Flask extension for rapid GitHub app development
+"""
+import env_file
 import hmac
 import logging
 
 from flask import abort, current_app, jsonify, request, _app_ctx_stack
 from github3 import GitHub, GitHubEnterprise
-
 
 LOG = logging.getLogger(__name__)
 
@@ -13,7 +15,8 @@ STATUS_NO_FUNC_CALLED = 'MISS'
 
 
 class GitHubApp(object):
-    """The GitHubApp object provides the central interface for interacting GitHub hooks
+    """
+    The GitHubApp object provides the central interface for interacting GitHub hooks
     and creating GitHub app clients.
 
     GitHubApp object allows using the "on" decorator to make GitHub hooks to functions
@@ -22,13 +25,23 @@ class GitHubApp(object):
     Keyword Arguments:
         app {Flask object} -- App instance - created with Flask(__name__) (default: {None})
     """
+
     def __init__(self, app=None):
         self._hook_mappings = {}
         if app is not None:
             self.init_app(app)
 
+    def load_env(self, app):
+        env = env_file.get(path='.env')
+        app.config['GITHUBAPP_ID'] = int(env['APP_ID'])
+        app.config['GITHUBAPP_SECRET'] = env['WEBHOOK_SECRET']
+        app.config['GITHUBAPP_URL'] = 'https://{}'.format(env['GHE_HOST'])
+        with open(env['PRIVATE_KEY_PATH'], 'rb') as key_file:
+            app.config['GITHUBAPP_KEY'] = key_file.read()
+
     def init_app(self, app):
-        """Initializes GitHubApp app by setting configuration variables.
+        """
+        Initializes GitHubApp app by setting configuration variables.
 
         The GitHubApp instance is given the following configuration variables by calling on Flask's configuration:
 
@@ -57,6 +70,7 @@ class GitHubApp(object):
             Path used for GitHub hook requests as a string.
             Default: '/'
         """
+        self.load_env(app)
         required_settings = ['GITHUBAPP_ID', 'GITHUBAPP_KEY', 'GITHUBAPP_SECRET']
         for setting in required_settings:
             if not app.config.get(setting):
@@ -130,10 +144,15 @@ class GitHubApp(object):
 
     @property
     def installation_token(self):
+        """
+
+        :return:
+        """
         return self.installation_client.session.auth.token
 
     def on(self, event_action):
-        """Decorator routes a GitHub hook to the wrapped function.
+        """
+        Decorator routes a GitHub hook to the wrapped function.
 
         Functions decorated as a hook recipient are registered as the function for the given GitHub event.
 
@@ -150,6 +169,7 @@ class GitHubApp(object):
             event_action {str} -- Name of the event and optional action (separated by a period), e.g. 'issues.opened' or
                 'pull_request'
         """
+
         def decorator(f):
             if event_action not in self._hook_mappings:
                 self._hook_mappings[event_action] = [f]
