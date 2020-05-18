@@ -21,8 +21,7 @@ jobs:
     - name: Install dependencies
       run: |
         pipenv install --dev
-        pip install tox tox-gh-actions
     - name: Test with tox
-      run: tox
+      run: pipenv run tox
       env:
         PLATFORM: ${{ matrix.platform }}
