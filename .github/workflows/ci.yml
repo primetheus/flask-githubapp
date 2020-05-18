@@ -1,27 +1,18 @@
-name: Python package
-
+name: CI
 on: [push]
 
 jobs:
   build:
-    runs-on: ${{ matrix.platform }}
-    strategy:
-      max-parallel: 4
-      matrix:
-        platform: [ubuntu-latest]
-        python-version: [3.8]
-
+    runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v1
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v1
+    - uses: actions/checkout@v2
+    - uses: actions/setup-python@v1
       with:
-        python-version: ${{ matrix.python-version }}
+        python-version: '3.8'
     - uses: dschep/install-pipenv-action@v1
-    - name: Install dependencies
+    - name: Run Tests
       run: |
         pipenv install --dev
+        PYTHONPATH=.. pipenv run green -vvv --run-coverage
     - name: Test with tox
       run: pipenv run tox
-      env:
-        PLATFORM: ${{ matrix.platform }}
