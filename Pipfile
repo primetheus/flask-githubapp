@@ -13,6 +13,7 @@ pylint = "*"
 seed-isort-config = "*"
 green = "*"
 tox = "*"
+tox-gh-actions = "*"
 
 [packages]
 github3.py = "*"
